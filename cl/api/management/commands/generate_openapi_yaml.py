@@ -1,8 +1,10 @@
 import pathlib
 
 from django.core.management.base import BaseCommand
+from django.conf import settings
 from drf_spectacular.generators import SchemaGenerator
 from drf_spectacular.renderers import OpenApiYamlRenderer
+from drf_spectacular.settings import spectacular_settings
 
 
 class Command(BaseCommand):
@@ -51,14 +53,15 @@ class Command(BaseCommand):
                     filtered_endpoints.append((path, path_regex, method, callback))
             return filtered_endpoints
 
+        original_preprocessing_hooks = list(spectacular_settings.PREPROCESSING_HOOKS)
+        if api_filter_path:
+            # Prepend our custom hook to the global spectacular_settings
+            spectacular_settings.PREPROCESSING_HOOKS = [filter_endpoints_by_path] + original_preprocessing_hooks
+
         try:
-            generator = SchemaGenerator(
-                api_version=api_version,
-                preprocessing_hooks=[filter_endpoints_by_path]
-            )
+            # SchemaGenerator will pick up hooks from spectacular_settings
+            generator = SchemaGenerator(api_version=api_version)
             schema = generator.get_schema(request=None, public=True)
-            # OpenApiYamlRenderer is a class, not an instance taking schema.
-            # Its render method takes the schema data as the first argument.
             renderer = OpenApiYamlRenderer()
             yaml_output = renderer.render(data=schema, renderer_context={})
 
@@ -74,3 +77,7 @@ class Command(BaseCommand):
             self.stderr.write(
                 self.style.ERROR(f"Error generating OpenAPI schema: {e}")
             )
+        finally:
+            # Restore original hooks if they were changed
+            if api_filter_path:
+                spectacular_settings.PREPROCESSING_HOOKS = original_preprocessing_hooks

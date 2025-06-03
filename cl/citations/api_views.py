@@ -4,6 +4,7 @@ from asgiref.sync import async_to_sync
 from django.conf import settings
 from django.db.models import QuerySet
 from django.utils.safestring import SafeString
+from drf_spectacular.utils import extend_schema
 from eyecite.models import FullCaseCitation, ShortCaseCitation
 from rest_framework.exceptions import NotFound
 from rest_framework.mixins import CreateModelMixin
@@ -42,6 +43,10 @@ class CitationLookupViewSet(LoggingMixin, CreateModelMixin, GenericViewSet):
 
         return citation_serializer.validated_data
 
+    @extend_schema(
+        request=CitationAPIRequestSerializer,
+        responses=CitationAPIResponseSerializer
+    )
     def create(self, request: Request, *args, **kwargs):
         citations = []
         data = self.validate_request_data(request)
