@@ -12,6 +12,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly"
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     # Versioning
     "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.URLPathVersioning",
     "DEFAULT_VERSION": "v3",
@@ -193,6 +194,13 @@ REST_FRAMEWORK = {
     "ORDERING_PARAM": "order_by",
     "HTML_SELECT_CUTOFF": 100,
     "UPLOADED_FILES_USE_URL": False,
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "CourtListener Legal Data API",
+    "DESCRIPTION": "OpenAPI schema for the CourtListener API.",
+    "VERSION": "v4",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
 
 if DEVELOPMENT:

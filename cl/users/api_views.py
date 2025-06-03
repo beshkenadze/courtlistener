@@ -19,9 +19,11 @@ from cl.api.models import (
 from cl.api.tasks import send_test_webhook_event
 from cl.users.filters import WebhookEventViewFilter
 from cl.users.forms import WebhookForm
+from .api_serializers import WebhookSerializer, WebhookEventSerializer
 
 
 class WebhooksViewSet(ModelViewSet):
+    serializer_class = WebhookSerializer
     """
     A set of actions to handle the listing, creation, deleting, and updating
     of webhooks for htmx.
@@ -35,6 +37,8 @@ class WebhooksViewSet(ModelViewSet):
         Return a list of all the webhooks
         for the currently authenticated user.
         """
+        if getattr(self, 'swagger_fake_view', False):
+            return Webhook.objects.none()
         user = self.request.user
         return Webhook.objects.filter(user=user).order_by("date_created")
 
@@ -253,6 +257,7 @@ class WebhooksViewSet(ModelViewSet):
 
 
 class WebhookEventViewSet(ModelViewSet):
+    serializer_class = WebhookEventSerializer
     """
     A set of actions to handle listing and filtering webhooks events for htmx.
     """
@@ -266,6 +271,8 @@ class WebhookEventViewSet(ModelViewSet):
         Returns a list of all webhook events for the currently authenticated
         user.
         """
+        if getattr(self, 'swagger_fake_view', False):
+            return WebhookEvent.objects.none()
         user = self.request.user
         return WebhookEvent.objects.filter(webhook__user=user).order_by(
             "-date_created"

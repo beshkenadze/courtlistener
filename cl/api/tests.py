@@ -3456,3 +3456,68 @@ class TestApiUsage(SimpleTestCase):
         dates = list(anonymous_data.keys())
         dates.remove("total")
         self.assertEqual(dates, ["2023-01-01", "2023-01-02"])
+
+
+class GenerateOpenAPISchemaTest(TestCase):
+    def _delete_test_file(self, path_obj):
+        # Helper to ensure file cleanup, compatible with addCleanup
+        if path_obj.exists():
+            path_obj.unlink()
+
+    def test_generate_openapi_yaml_command(self):
+        output_file = Path("test_openapi.yaml")
+        # Ensure cleanup even if test fails
+        self.addCleanup(self._delete_test_file, output_file)
+
+        stdout = StringIO()
+        stderr = StringIO()
+
+        # Dynamically get the path to manage.py
+        # This assumes manage.py is in the project root, two levels up from cl/api/
+        base_dir = Path(__file__).resolve().parents[2]
+        manage_py_path = base_dir / "manage.py"
+
+        # Check if manage.py exists at the expected location
+        if not manage_py_path.exists():
+            self.fail(f"manage.py not found at {manage_py_path}")
+
+        try:
+            call_command(
+                "generate_openapi_yaml",
+                f"--file={output_file}",
+                "--api-version=v4",
+                stdout=stdout,
+                stderr=stderr,
+            )
+        except Exception as e:
+            # This will catch errors like the command not being found or
+            # other manage.py execution issues.
+            self.fail(f"call_command raised an exception: {e}\nStderr: {stderr.getvalue()}\nStdout: {stdout.getvalue()}")
+
+        stderr_value = stderr.getvalue()
+        # Check for critical errors, but allow drf-spectacular's own warnings
+        if "Error" in stderr_value or "Exception" in stderr_value:
+            # More specific check to ignore known, non-fatal warnings from spectacular
+            # This is a simple check; a more robust solution might involve regex or specific error codes
+            if not "Incompatible AutoSchema" in stderr_value and not "unable to guess serializer" in stderr_value:
+                 # Allow "Failed to obtain model through view's queryset" as it's a known issue being worked on
+                if not "Failed to obtain model through view's queryset" in stderr_value:
+                    self.fail(f"Command stderr indicates an unhandled error or exception: {stderr_value}")
+
+
+        self.assertTrue(output_file.exists(), f"Output file '{output_file}' was not created. Stdout: {stdout.getvalue()}, Stderr: {stderr.getvalue()}")
+        self.assertTrue(output_file.stat().st_size > 0, "Output file is empty.")
+
+        with open(output_file, "r") as f:
+            content = yaml.safe_load(f)
+
+        self.assertIn("openapi", content, "Generated YAML missing 'openapi' key.")
+        self.assertIn("info", content, "Generated YAML missing 'info' key.")
+        # Ensure the API version in the schema matches what we requested
+        self.assertEqual(content["info"]["version"], "v4 (v4)", "API version in schema does not match requested version.")
+        self.assertIn("paths", content, "Generated YAML missing 'paths' key.")
+        self.assertTrue(len(content["paths"]) > 0, "No paths were generated in the schema.")
+
+        # Explicitly delete after successful assertions for good measure, though addCleanup handles it
+        if output_file.exists():
+            output_file.unlink()

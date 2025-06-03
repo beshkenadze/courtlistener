@@ -1,5 +1,10 @@
 from django.urls import include, path, re_path
 from django.views.generic import RedirectView, TemplateView
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView,
+)
 from rest_framework.routers import DefaultRouter
 
 from cl.alerts import api_views as alert_views
@@ -193,6 +198,18 @@ urlpatterns = [
     ),
     re_path(r"^api/rest/(?P<version>[v3]+)/", include(router.urls)),
     re_path(r"^api/rest/(?P<version>[v4]+)/", include(router_v4.urls)),
+    # Schema, Swagger, and Redoc
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path(
+        "api/schema/swagger-ui/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
+    path(
+        "api/schema/redoc/",
+        SpectacularRedocView.as_view(url_name="schema"),
+        name="redoc",
+    ),
     # Documentation
     path("help/api/", views.api_index, name="api_index"),
     path("help/api/jurisdictions/", views.court_index, name="court_index"),

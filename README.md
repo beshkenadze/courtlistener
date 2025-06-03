@@ -91,6 +91,21 @@ https://free.law/contact/
 
 
 
+## OpenAPI Schema Generation
+
+To generate an OpenAPI v3 YAML schema for the API, use the following management command:
+
+```bash
+python manage.py generate_openapi_yaml [options]
+```
+
+**Options:**
+
+*   `--file <filepath>`: Specifies the output file path for the OpenAPI YAML schema. Defaults to `openapi.yaml`.
+    Example: `python manage.py generate_openapi_yaml --file docs/api/openapi_v4.yaml`
+*   `--api-version <version>`: Specifies the API version for which to generate the schema (e.g., `v3`, `v4`). Defaults to `v4`.
+    Example: `python manage.py generate_openapi_yaml --api-version v3`
+
 [issues]: https://github.com/freelawproject/courtlistener/issues
 [hw]: https://github.com/freelawproject/courtlistener/labels/help%20wanted
 [dq]: https://github.com/freelawproject/courtlistener/labels/data-quality
